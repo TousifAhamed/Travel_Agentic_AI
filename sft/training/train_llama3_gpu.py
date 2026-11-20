@@ -299,7 +299,14 @@ def setup_model_and_tokenizer(checkpoint_path=None):
                     model_file = next((f for f in checkpoint_files if f.endswith('.bin') or f.endswith('.safetensors')), None)
                     if model_file:
                         print(f"Loading weights from: {model_file}")
-                        model.load_state_dict(torch.load(os.path.join(latest_checkpoint, model_file)))
+                        weights_path = os.path.join(latest_checkpoint, model_file)
+                        if model_file.endswith('.safetensors'):
+                            from safetensors.torch import load_file
+                            state_dict = load_file(weights_path)
+                        else:
+                            # weights_only=True: never unpickle arbitrary objects from a checkpoint file
+                            state_dict = torch.load(weights_path, weights_only=True)
+                        model.load_state_dict(state_dict)
                     else:
                         print("No model weight files found in checkpoint")
                 except Exception as e:
